@@ -1,15 +1,29 @@
-/* Ledger that associate the token ids created in the contract with their owner. 
-Strings (link to resource, the certificate) mapped to addresses. */
-type ledger = big_map<string, address>;
+type ledger = big_map<string, address>;     // aimed to be a ledger of all actions. 
+
+type batch_pool = big_map<string, address>;     // <CID_batch, address_of_sender>
+
+type ledger_certificates = big_map<string, address>;     // <CID_certificate, address_of_owner>
+
+type reward_amounts = big_map<string, nat>;     // Maps CIDs to the reward amount submitted for the resource.
+
+type winners = list<address>;
+
+type foo = {
+  resource:string,
+  reward_amount:nat
+}
 
 /* Possible parameters */
 type parameter =
-| ["Mint", string]
+| ["Add_batch", string],
+| ["Mint_certificate", foo],
+| ["Add_winner", address],
+| ["Pay_winners", string]
 | ["None"];
 
 let sender_address = Tezos.get_source();     // Source address.
 
-/* Implement this later. */
+/* Implement this later... */
 /* /* exists, checks if a resource has already been minted. */
 let exists = (sender_address: address, resource: string) => {
   return match(ledger.find_opt (address, resource), {
@@ -18,20 +32,42 @@ let exists = (sender_address: address, resource: string) => {
   });
 }; */
 
-/* mint, adds to ledger <resource, source address> */
-const mint = (resource: string, sender_address: address): return_ => ledger.add(resource, sender_address);
+/* new_batch, adds to batch to the batch pool. */
+const new_batch = (resource: string, sender_address: address): return_ => batch_pool.add(resource, sender_address);
+
+/* mint, adds to ledger <certificate resource, source address> */
+const mint = (resource: string, sender_address: address): return_ => ledger_certificates.add(resource, sender_address);
+
+/* log_reward, adds reward amount provided by client to the reward_amounts mapping.
+<resource, reward amount> */
+const log_reward(resource: string, amount, nat): return => reward_amounts.add(resource, nat);
+
+/* add_winner, adds the address of the new winner to pay for this batch. Function called after every game. */
+const add_winner(new_winner_address: address): return => winners = list([new_winner_address, winners]);
+
+/* pay_winners */
+const pay_winners(resource: string): return => {
+  let predicate = receiver_address => Tezos.transaction (unit, get_batch_reward_amount(resource), receiver_address);
+  List.iter(predicate, winners);
+}
+
+const get_batch_reward_amount(resource: string): return =>
+  Map.find_opt(resource);
 
 
 
-//* Main and return functions *//
+
 
 /* Main access point that dispatches to the entrypoints according to
    the smart contract parameter. */
-const main = (action: parameter, resource: string) : [ list<operation> , storage ] => {
+const main = (params: parameter = [action, other_param], resource: string, amount: nat) : [ list<operation> , storage ] => {
  return [
    list([]),    // No operations
    (match (action, {
-    Mint: n => mint(resource, sender_address),
+    Add_batch: n => new_batch(other_param, sender_address),
+    Mint_certificate: [resource, reward_amount] => mint(resource, sender_address), log_reward(resource, reward_amount),
+    Add_winner: n => add_winner(other_param),
+    Pay_winners: n => pay_winners(other_param),
     None:     ()  => 0}))
   ]
 };
