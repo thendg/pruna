@@ -1,0 +1,39 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:dev.db"
+}
+
+model Vote {
+  id Int
+  batch Batch @relation(fields: [batchId], references: [origin]) // ref Batch.origin
+  feature String
+  address String
+  vote Boolean
+  batchId String
+  @@id([id])
+}
+
+model BatchWinners {
+  id Int
+  batch Batch @relation(fields: [batchwinnersId], references: [origin])  // ref to Batch.origin
+  address String
+  batchwinnersId String
+  @@id([id])
+
+}
+
+model Batch {
+  origin String
+  pruners Int
+  threshold Int
+  votes Vote[]
+  batchWinners BatchWinners[]
+  @@id([origin])
+}
