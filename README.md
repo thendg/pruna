@@ -1,5 +1,5 @@
 # PRUNA
-> *A blockchain based data cleaning service that can guarantee upwards of 98% accuracy of large datasets with lightning fast return times.*
+> *A blockchain based data cleaning service that can guarantee up to 100% accuracy in large datasets with lightning fast turnaround times.*
 
 PRUNA is a system which "prunes" classification datasets, indentifying false classifications to ensure up to 100% accuracy in any dataset it is given. This service could be used in cases where datasets are used for high-stakes scenarios, for example evaulating the validity of a dataset being used to train machine learning models that classify medical conditions or image classification for critical systems. In these cases, bad data can make a big difference so owners or users of this data would have a big incentive to clean it before its used for anything. Vendors could use the service to ensure clean, high accuracy datasets without requiring monotonous, tedious manual labour and data scientists could utilise the system to prepare data before usag, improving the perfomance or accuracy of the task the data is being used for.
 
