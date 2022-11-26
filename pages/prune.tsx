@@ -30,13 +30,16 @@ export default function Prune() {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (inputRef.current) {
-      inputRef.current.value = "";
-      const data = await fetch("/api/batch");
+      const data = await fetch("/api/batch", {
+        method: "GET",
+        body: JSON.stringify({ cid: inputRef.current.value }),
+      });
       const json: BatchJSONResponse = await data.json();
 
       const files = [];
       for (const file of json.batch) files.push(<File file={file} />);
 
+      inputRef.current.value = "";
       setFiles(files);
     }
   }
