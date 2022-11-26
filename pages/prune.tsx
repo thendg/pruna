@@ -2,7 +2,8 @@ import { FormEvent, useContext, useRef, useState } from "react";
 import ConnectWalletPage from "../components/core/ConnectWalletPage";
 import Page from "../components/core/Page";
 import { WalletContext } from "../components/core/WalletContext";
-import { BatchFile, BatchJSONResponse } from "./api/batch";
+import { BatchFile } from "./api/batch";
+import type { BatchJSONResponse } from "./api/batch";
 
 const title = "Pruna - Prune";
 
