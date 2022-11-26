@@ -1,6 +1,6 @@
 /* Ledger that associate the token ids created in the contract with their owner. 
-Addresses mapped to string (link to resource, the certificate). */
-type ledger = big_map<address, string>;
+Strings (link to resource, the certificate) mapped to addresses. */
+type ledger = big_map<string, address>;
 
 /* Possible parameters */
 type parameter =
@@ -9,11 +9,17 @@ type parameter =
 
 let sender_address = Tezos.get_source();     // Source address.
 
+/* Implement this later. */
+/* /* exists, checks if a resource has already been minted. */
+let exists = (sender_address: address, resource: string) => {
+  return match(ledger.find_opt (address, resource), {
+   Some: move => move,
+   None: () => failwith("NFT has not already been minted.")
+  });
+}; */
 
-
-
-/* mint, adds to ledger <source address, resource> */
-const mint = (sender_address: address, resource: string): return_ => ledger.update(address, resource);
+/* mint, adds to ledger <resource, source address> */
+const mint = (resource: string, sender_address: address): return_ => ledger.add(resource, sender_address);
 
 
 
@@ -25,7 +31,7 @@ const main = (action: parameter, resource: string) : [ list<operation> , storage
  return [
    list([]),    // No operations
    (match (action, {
-    Mint: n => mint(sender_address, resource),
+    Mint: n => mint(resource, sender_address),
     None:     ()  => 0}))
   ]
 };
