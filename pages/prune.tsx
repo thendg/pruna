@@ -23,10 +23,10 @@ function File({ file }: { file: BatchFile }) {
 
 export default function Prune() {
   const inputRef = useRef<HTMLInputElement>(null);
-  const { wallet, setWallet } = useContext(WalletContext);
+  const { wallet } = useContext(WalletContext);
   const [files, setFiles] = useState<JSX.Element[]>([]);
 
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (inputRef.current) {
       inputRef.current.value = "";
@@ -40,13 +40,23 @@ export default function Prune() {
     }
   }
 
+  async function confirm() {
+    if (inputRef.current) {
+      const data = await fetch("/api/add-batch"); // TODO batch fees?
+      const message =
+        data.status == 200 ? "Success" : "Failed: " + data.statusText;
+      console.log(message);
+      alert(message);
+    }
+  }
+
   return wallet ? (
     <Page title={title} logo>
       <div className="pt-10 flex flex-col items-center justify-center space-y-5">
         <span className="text-black text-8xl font-inter font-light">Prune</span>
 
         <div className="flex items-center space-x-2 relative">
-          <form className="relative" onSubmit={onSubmit}>
+          <form className="relative" onSubmit={submit}>
             <input
               ref={inputRef}
               className="block p-4 pl-10 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:outline-none"
@@ -65,6 +75,7 @@ export default function Prune() {
             <button
               type="button"
               className="animate-pulse absolute top-2 -right-20 text-white bg-gradient-to-br from-green-400 to-blue-600 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-green-200 dark:focus:ring-green-800 font-medium rounded-lg text-sm px-3 py-2 text-center mr-2 mb-2"
+              onClick={confirm}
             >
               Confirm
             </button>
