@@ -28,6 +28,7 @@ export default function Prune() {
   const { wallet } = useContext(WalletContext);
   const [files, setFiles] = useState<JSX.Element[]>([]);
   const Tezos = new TezosToolkit(RPC_URL);
+  if (wallet) Tezos.setWalletProvider(wallet);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -55,15 +56,27 @@ export default function Prune() {
     if (!rewardRef.current) return;
     if (!parseInt(rewardRef.current.value)) return;
 
+    const op = await Tezos.contract.transfer({
+      to: CONTRACT_ADDRESS,
+      amount: parseInt(rewardRef.current.value),
+    });
+    try {
+      await op.confirmation(1);
+      console.log(`Operation Injected: https://ghost.tzstats.com/${op.hash}`);
+    } catch (error) {
+      console.log(error);
+      return;
+    }
+
     const contract = await Tezos.contract.at(CONTRACT_ADDRESS);
     contract.methods.Add_batch(cidRef.current.value, rewardRef.current.value);
 
-    // TODO pay reward
     const data = await fetch(`/api/batch/${cidRef.current.value}`, {
       method: "POST",
     });
     const message =
       data.status == 200 ? "Success" : "Failed: " + data.statusText;
+
     console.log(message);
     alert(message);
 
