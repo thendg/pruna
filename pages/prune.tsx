@@ -14,7 +14,7 @@ export default function Prune() {
     event.preventDefault();
     if (inputRef.current) {
       inputRef.current.value = "";
-      const data = await fetch("/api/hello");
+      const data = await fetch("/api/batch");
       const json = await data.json();
     }
   }
