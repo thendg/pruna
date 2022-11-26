@@ -15,8 +15,8 @@ type foo = {
 
 /* Possible parameters */
 type parameter =
-| ["Add_batch", string],
-| ["Mint_certificate", foo],
+| ["Add_batch", foo],
+| ["Mint_certificate", string],
 | ["Add_winner", address],
 | ["Pay_winners", string]
 | ["None"];
@@ -64,8 +64,8 @@ const main = (params: parameter = [action, other_param], resource: string, amoun
  return [
    list([]),    // No operations
    (match (action, {
-    Add_batch: n => new_batch(other_param, sender_address),
-    Mint_certificate: [resource, reward_amount] => mint(resource, sender_address), log_reward(resource, reward_amount),
+    Add_batch: n => new_batch(other_param, sender_address), log_reward(resource, reward_amount),
+    Mint_certificate: [resource, reward_amount] => mint(resource, sender_address),
     Add_winner: n => add_winner(other_param),
     Pay_winners: n => pay_winners(other_param),
     None:     ()  => 0}))
