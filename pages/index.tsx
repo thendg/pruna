@@ -1,18 +1,37 @@
-import Head from "next/head";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import Page from "../components/core/Page";
+import { BeaconWallet } from "@taquito/beacon-wallet";
+import { NetworkType } from "@airgap/beacon-types";
+import { useContext } from "react";
+import { WalletContext } from "../components/core/WalletContext";
+
+const NETWORK_TYPE = NetworkType.GHOSTNET;
 
 export default function Home() {
+  const { wallet, setWallet } = useContext(WalletContext);
+
+  console.log(wallet);
+
+  async function connect() {
+    const options = {
+      name: "Pruna",
+      iconUrl: "./logo.png",
+      preferredNetwork: NETWORK_TYPE,
+    };
+    const wallet = new BeaconWallet(options);
+
+    await wallet.requestPermissions({
+      network: {
+        type: NETWORK_TYPE,
+      },
+    });
+
+    setWallet!(wallet);
+  }
+
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5, ease: [0.17, 0.67, 0.83, 0.67] }}
-    >
-      <Head>
-        <title>Pruna</title>
-      </Head>
-      <div className="w-full h-screen bg-gray-50 flex flex-col items-center">
+    <Page title="Pruna">
+      <div className="flex flex-col items-center">
         <div className="mt-60 relative">
           <div className="h-1/6 relative mix-blend-multiply filter blur-2xl">
             <div className="absolute top-0 -left-4 w-96 h-96 bg-purple-300 rounded-full" />
@@ -28,24 +47,34 @@ export default function Home() {
 
             <span className="w-full h-1 animate-border inline-block bg-white from-pink-500 via-red-500 to-yellow-500 bg-[length:400%_400%] p-0.5 bg-gradient-to-r"></span>
 
-            <h1 className="">PRUNA</h1>
-            <div className="space-x-10 text-4xl text-black font-inter font-thin ">
-              <Link
-                className="hover:underline decoration-1 decoration-gray-300"
-                href="/prune"
-              >
-                Prune
-              </Link>
-              <Link
-                className="hover:underline decoration-1 decoration-gray-300"
-                href="/play"
-              >
-                Play
-              </Link>
+            <div className="mt-8 space-x-10 text-4xl text-black font-inter font-thin ">
+              {wallet ? (
+                <>
+                  <Link
+                    className="hover:underline decoration-1 decoration-gray-300"
+                    href="/prune"
+                  >
+                    Prune
+                  </Link>
+                  <Link
+                    className="hover:underline decoration-1 decoration-gray-300"
+                    href="/play"
+                  >
+                    Play
+                  </Link>
+                </>
+              ) : (
+                <span
+                  className="animate-bounce text-xl hover:border-b-2 shadow-lg rounded-full p-2 text-black font-inter font-light cursor-pointer"
+                  onClick={connect}
+                >
+                  Connect Wallet
+                </span>
+              )}
             </div>
           </div>
         </div>
       </div>
-    </motion.div>
+    </Page>
   );
 }
