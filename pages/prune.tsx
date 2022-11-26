@@ -4,6 +4,8 @@ import Page from "../components/core/Page";
 import { WalletContext } from "../components/core/WalletContext";
 import { BatchFile } from "./api/batch/[cid]";
 import type { BatchJSONResponse } from "./api/batch/[cid]";
+import { TezosToolkit } from "@taquito/taquito";
+import { RPC_URL, CONTRACT_ADDRESS } from "../env";
 
 const title = "Pruna - Prune";
 
@@ -21,56 +23,68 @@ function File({ file }: { file: BatchFile }) {
 }
 
 export default function Prune() {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const cidRef = useRef<HTMLInputElement>(null);
+  const rewardRef = useRef<HTMLInputElement>(null);
   const { wallet } = useContext(WalletContext);
   const [files, setFiles] = useState<JSX.Element[]>([]);
+  const Tezos = new TezosToolkit(RPC_URL);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (inputRef.current) {
-      const data = await fetch(`/api/batch/${inputRef.current.value}`, {
-        method: "GET",
-      });
-      const json: BatchJSONResponse = await data.json();
+    if (!cidRef.current) return;
 
-      const files = [];
-      for (const file of json.batch)
-        files.push(
-          <li className="py-3" key={file.CID}>
-            <File file={file} />
-          </li>
-        );
+    const data = await fetch(`/api/batch/${cidRef.current.value}`, {
+      method: "GET",
+    });
+    const json: BatchJSONResponse = await data.json();
 
-      inputRef.current.value = "";
-      setFiles(files);
-    }
+    const files = [];
+    for (const file of json.batch)
+      files.push(
+        <li className="py-3" key={file.CID}>
+          <File file={file} />
+        </li>
+      );
+
+    setFiles(files);
   }
 
-  async function confirm() {
-    if (inputRef.current) {
-      const data = await fetch("/api/add-batch"); // TODO batch fees?
-      const message =
-        data.status == 200 ? "Success" : "Failed: " + data.statusText;
-      console.log(message);
-      alert(message);
-    }
-  }
+  async function confirm(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!cidRef.current) return;
+    if (!rewardRef.current) return;
+    if (!parseInt(rewardRef.current.value)) return;
 
-  console.log(files.length);
+    const contract = await Tezos.contract.at(CONTRACT_ADDRESS);
+    contract.methods.Add_batch(cidRef.current.value, rewardRef.current.value);
+
+    // TODO pay reward
+    const data = await fetch(`/api/batch/${cidRef.current.value}`, {
+      method: "POST",
+    });
+    const message =
+      data.status == 200 ? "Success" : "Failed: " + data.statusText;
+    console.log(message);
+    alert(message);
+
+    cidRef.current.value = "";
+    rewardRef.current.value = "";
+  }
 
   return wallet ? (
     <Page title={title} logo>
       <div className="pt-10 flex flex-col items-center justify-center space-y-5">
         <span className="text-black text-8xl font-inter font-light">Prune</span>
 
-        <div className="flex space-x-2 relative w-full justify-center ">
+        <div className="flex space-y-2 relative w-full items-center flex-col">
           <form className="relative w-1/3" onSubmit={submit}>
             <input
-              ref={inputRef}
+              ref={cidRef}
               className="block p-4 pl-10 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:outline-none"
               placeholder="IPFS CID"
               required
             />
+
             <button
               type="submit"
               className="text-white absolute right-2.5 bottom-2.5 bg-blue-700 hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
@@ -80,13 +94,21 @@ export default function Prune() {
           </form>
 
           {files.length && (
-            <button
-              type="button"
-              className="animate-pulse text-white bg-gradient-to-br from-green-400 to-blue-600 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-green-200 dark:focus:ring-green-800 font-medium rounded-lg text-sm px-3 py-2 text-center mr-2 mb-2"
-              onClick={confirm}
-            >
-              Confirm
-            </button>
+            <form className="relative w-1/3" onSubmit={confirm}>
+              <input
+                ref={cidRef}
+                className="block p-4 pl-10 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:outline-none"
+                placeholder="Batch Reward"
+                required
+              />
+
+              <button
+                type="submit"
+                className="text-white absolute right-2.5 bottom-2.5 bg-gradient-to-br bg-black font-medium rounded-lg text-sm px-4 py-2 text-center from-green-400 to-blue-600 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-green-200 dark:focus:ring-green-800 animate-pulse"
+              >
+                Confirm
+              </button>
+            </form>
           )}
         </div>
 
