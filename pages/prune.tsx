@@ -1,10 +1,14 @@
-import { FormEvent, useRef } from "react";
+import { FormEvent, useContext, useRef } from "react";
+import ConnectWalletPage from "../components/core/ConnectWalletPage";
 import Page from "../components/core/Page";
+import { WalletContext } from "../components/core/WalletContext";
 
 // TODO: if no wallet, fail
+const title = "Pruna - Prune";
 
 export default function Prune() {
   const inputRef = useRef<HTMLInputElement>(null);
+  const { wallet, setWallet } = useContext(WalletContext);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -12,12 +16,11 @@ export default function Prune() {
       inputRef.current.value = "";
       const data = await fetch("/api/hello");
       const json = await data.json();
-      console.log(json);
     }
   }
 
-  return (
-    <Page title="Pruna - Prune" logo>
+  return wallet ? (
+    <Page title={title} logo>
       <div className="pt-10 flex flex-col items-center space-y-28">
         <span className="text-black text-8xl font-inter font-light">Prune</span>
 
@@ -37,5 +40,7 @@ export default function Prune() {
         </form>
       </div>
     </Page>
+  ) : (
+    <ConnectWalletPage title={title} />
   );
 }

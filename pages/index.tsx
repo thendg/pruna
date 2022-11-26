@@ -1,33 +1,11 @@
 import Link from "next/link";
 import Page from "../components/core/Page";
-import { BeaconWallet } from "@taquito/beacon-wallet";
-import { NetworkType } from "@airgap/beacon-types";
 import { useContext } from "react";
 import { WalletContext } from "../components/core/WalletContext";
-
-const NETWORK_TYPE = NetworkType.GHOSTNET;
+import ConnectWalletWidget from "../components/core/ConnectWalletWidget";
 
 export default function Home() {
-  const { wallet, setWallet } = useContext(WalletContext);
-
-  console.log(wallet);
-
-  async function connect() {
-    const options = {
-      name: "Pruna",
-      iconUrl: "./logo.png",
-      preferredNetwork: NETWORK_TYPE,
-    };
-    const wallet = new BeaconWallet(options);
-
-    await wallet.requestPermissions({
-      network: {
-        type: NETWORK_TYPE,
-      },
-    });
-
-    setWallet!(wallet);
-  }
+  const { wallet } = useContext(WalletContext);
 
   return (
     <Page title="Pruna">
@@ -64,12 +42,7 @@ export default function Home() {
                   </Link>
                 </>
               ) : (
-                <span
-                  className="animate-bounce text-xl hover:border-b-2 shadow-lg rounded-full p-2 text-black font-inter font-light cursor-pointer"
-                  onClick={connect}
-                >
-                  Connect Wallet
-                </span>
+                <ConnectWalletWidget />
               )}
             </div>
           </div>
