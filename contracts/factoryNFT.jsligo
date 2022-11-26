@@ -1,0 +1,34 @@
+// ledger that associate the token ids created in the contract with their owner.
+type ledger = big_map<address, int>;
+type metadata = big_map<address, string>;      // records the metadata associated with the contract itself (its name, version, etc.)
+type token_id = big_map<address, int>;     // records the metadata associated with every token stored in the contract
+
+
+/* Possible parameters */
+type parameter =
+| ["CreateNFT", delta]
+| ["Reset"];
+
+
+/* Two entrypoints */
+
+/* createToken, returns int of new token_id */
+const createToken = (token_id: token_id): return_ => token_id + 1;
+
+/* mint, assigns token to the receiver's address */
+const mint = (address: address, token_id: token_id): return_ =>ledger.update(address, token_id);
+
+
+/* Main access point that dispatches to the entrypoints according to
+   the smart contract parameter. */
+const main = (action: parameter, store: storage) : [ list<operation> , storage ] => {
+ return [
+   list([]),    // No operations
+   (match (action, {
+    createNFT: n => createToken (token_id, delta),
+    Reset:     ()  => 0}))
+  ]
+};
+
+/* returns the updated ledger */
+type return_ = [list<operation>, ledger];
