@@ -28,28 +28,32 @@ async function get(
   req: NextApiRequest,
   res: NextApiResponse<BatchJSONResponse | string>
 ) {
-  const { cid } = req.body;
+  const { cid } = req.query;
+  if (!cid) {
+    res.status(400).send("No CID supplied in query");
+    return;
+  }
 
   const client = getStorageClient();
-  const web3Res = await client.get(cid);
+  const web3Res = await client.get(cid as string);
   if (web3Res) {
-    console.log(`Got a response! [${web3Res.status}] ${web3Res.statusText}`); // TODO: remove
-    if (!web3Res.ok)
+    if (!web3Res.ok) {
       res
         .status(400)
         .send(
           `failed to get ${cid} - [${web3Res.status}] ${web3Res.statusText}`
         );
+      return;
+    }
 
     const files = await web3Res.files();
     const batch = [];
     for (const file of files) {
-      console.log(`${file.cid} -- ${file.name} -- ${file.size}`);
       batch.push({ path: file.name, CID: file.cid });
     }
 
     res.status(200).json({ batch });
-  } else res.status(400).send("Failed to get response from Web3.Storage");
+  } else res.status(500).send("Failed to get response from Web3.Storage");
 }
 
 async function post(

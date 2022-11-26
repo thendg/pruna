@@ -2,8 +2,8 @@ import { FormEvent, useContext, useRef, useState } from "react";
 import ConnectWalletPage from "../components/core/ConnectWalletPage";
 import Page from "../components/core/Page";
 import { WalletContext } from "../components/core/WalletContext";
-import { BatchFile } from "./api/batch";
-import type { BatchJSONResponse } from "./api/batch";
+import { BatchFile } from "./api/batch/[cid]";
+import type { BatchJSONResponse } from "./api/batch/[cid]";
 
 const title = "Pruna - Prune";
 
@@ -11,14 +11,12 @@ function File({ file }: { file: BatchFile }) {
   const { path, CID } = file;
 
   return (
-    <li className="py-3">
-      <div className="flex items-center">
-        <div>
-          <p className="text-sm font-medium truncate text-black">{path}</p>
-          <p className="text-sm text-gray-500 truncate">{CID}</p>
-        </div>
+    <div className="flex items-center">
+      <div>
+        <p className="text-sm font-medium truncate text-black">{path}</p>
+        <p className="text-sm text-gray-500 truncate">{CID}</p>
       </div>
-    </li>
+    </div>
   );
 }
 
@@ -30,14 +28,18 @@ export default function Prune() {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (inputRef.current) {
-      const data = await fetch("/api/batch", {
+      const data = await fetch(`/api/batch/${inputRef.current.value}`, {
         method: "GET",
-        body: JSON.stringify({ cid: inputRef.current.value }),
       });
       const json: BatchJSONResponse = await data.json();
 
       const files = [];
-      for (const file of json.batch) files.push(<File file={file} />);
+      for (const file of json.batch)
+        files.push(
+          <li className="py-3" key={file.CID}>
+            <File file={file} />
+          </li>
+        );
 
       inputRef.current.value = "";
       setFiles(files);
@@ -54,13 +56,15 @@ export default function Prune() {
     }
   }
 
+  console.log(files.length);
+
   return wallet ? (
     <Page title={title} logo>
       <div className="pt-10 flex flex-col items-center justify-center space-y-5">
         <span className="text-black text-8xl font-inter font-light">Prune</span>
 
-        <div className="flex items-center space-x-2 relative">
-          <form className="relative" onSubmit={submit}>
+        <div className="flex space-x-2 relative w-full justify-center ">
+          <form className="relative w-1/3" onSubmit={submit}>
             <input
               ref={inputRef}
               className="block p-4 pl-10 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:outline-none"
@@ -75,10 +79,10 @@ export default function Prune() {
             </button>
           </form>
 
-          {files.length > 0 && (
+          {files.length && (
             <button
               type="button"
-              className="animate-pulse absolute top-2 -right-20 text-white bg-gradient-to-br from-green-400 to-blue-600 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-green-200 dark:focus:ring-green-800 font-medium rounded-lg text-sm px-3 py-2 text-center mr-2 mb-2"
+              className="animate-pulse text-white bg-gradient-to-br from-green-400 to-blue-600 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-green-200 dark:focus:ring-green-800 font-medium rounded-lg text-sm px-3 py-2 text-center mr-2 mb-2"
               onClick={confirm}
             >
               Confirm
