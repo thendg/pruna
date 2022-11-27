@@ -1,27 +1,27 @@
 type stor = {
-  ledger : big_map<string, address>;     // aimed to be a ledger of all actions. 
+  my_ledger : big_map<string, address>,     // aimed to be a ledger of all actions. 
 
-  batch_pool : big_map<string, address>;     // <CID_batch, address_of_sender>
+  batch_pool : big_map<string, address>,     // <CID_batch, address_of_sender>
 
-  ledger_nft_certificates : big_map<string, address>;     // <CID_certificate, address_of_owner>
+  ledger_nft_certificates : big_map<string, address>,     // <CID_certificate, address_of_owner>
 
-  reward_amounts : big_map<string, nat>;     // Maps CIDs to the reward amount submitted for the resource.
-}
+  reward_amounts : big_map<string, nat>,     // Maps CIDs to the reward amount submitted for the resource.
+};
 
 type new_batch_input_struct = {
   resource:string,
   reward_amount:tez
-}
+};
 
 type pay_winners_input_struct = {
   resource:string,
   winners:list<address>
-}
+};
 
 /* Possible parameters */
 type parameter =
-| ["Add_batch", new_batch_input_struct],
-| ["Mint_certificate", string],
+  ["Add_batch", new_batch_input_struct]
+| ["Mint_certificate", string]
 | ["Pay_winners", pay_winners_input_struct]
 | ["None"];
 
@@ -37,45 +37,46 @@ let exists = (sender_address: address, resource: string) => {
 }; */
 
 /* new_batch, adds to batch to the batch pool. */
-const new_batch = (resource: string, sender_address: address, stor : storage): return_ => {stor with batch_pool = stor.batch_pool.add(resource, sender_address) };
+const new_batch = (resource: string, sender_address: address, stor : storage): return_ => {stor.batch_pool = stor.batch_pool.add(resource, sender_address) };
 
 
 /* log_reward, adds reward amount provided by client to the reward_amounts mapping.
 <resource, reward amount> */
-const log_reward(resource: string, amount: tez, stor : storage): return => {stor with reward_amounts = stor.reward_amounts.add(resource, tez)};
+const log_reward = (resource: string, amount: tez, stor : storage): return_ => {stor.reward_amounts = stor.reward_amounts.add(resource, tez)};
 
 /* pay_winners */
-const pay_winners(resource: string, winners: list<address>): return => {
+const pay_winners = (resource: string, winners: list<address>): return_ => {
   let lambda = receiver_address => Tezos.transaction (unit, get_batch_reward_amount(resource), receiver_address);
   // return list of xfers here
   return List.map(lambda, winners);
-}
+};
 
 /* get_batch_reward_amount, retrieve the reward amount from the big_map. */
-const get_batch_reward_amount(resource: string): return =>
+const get_batch_reward_amount = (resource: string): return_ =>
   Map.find_opt(resource);
 
 
 /* mint, adds to ledger <certificate resource, source address> */
-const mint = (resource: string, sender_address: address, stor : storage): return_ => {stor with ledger_nft_certificates = stor.ledger_nft_certificates.add(resource, sender_address)};
+const mint = (resource: string, sender_address: address, stor : storage): return_ => {stor.ledger_nft_certificates = stor.ledger_nft_certificates.add(resource, sender_address)};
 
+let adding_batch = (resource: string, amount: tez, stor: storage) => {
+  new_batch(resource, sender_address, stor);
+  log_reward(resource, amount, stor);
+};
 
 
 /* Main access point that dispatches to the entrypoints according to
    the smart contract parameter. */
-const main = (params: parameter = [action, other_param], storage) : [ list<operation> , storage ] => {
+const main = (params: parameter, stor: storage) : [ list<operation> , storage ] => {
  return [
    list([]),    // No operations
    (match (action, {
-    Add_batch: n =>
-      let new_stor = new_batch(other_param, sender_address, stor) in
-      let new_stor = log_reward(resource, reward_amount, new_stor) in
-      [], new_stor
-    Mint_certificate: [resource, reward_amount] => mint(resource, sender_address),
+    Add_batch: (resource, reward_amount) => adding_batch(resource, reward_amount, stor),
+    Mint_certificate: (resource, reward_amount) => mint(resource, sender_address, stor),
     Pay_winners: (resource, winners) => pay_winners(resource, winners),
     None:     ()  => [], storage}))
   ]
 };
 
 /* Returns the updated ledger */
-type return_ = [list<operation>, ledger];
+type return_ = [list<operation>, my_ledger];
