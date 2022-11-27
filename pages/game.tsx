@@ -2,7 +2,7 @@
 import { FormEvent, useState, useEffect, useRef } from "react";
 import useInterval from "@use-it/interval";
 import Page from "../components/core/Page";
-import dog from "../components/dog.jpg";
+import dog from "../components/dog.png";
 
 const LETTERS = [
   "A",
@@ -116,7 +116,7 @@ export default function Game() {
     setCountDown(3);
     // loadPhoto();  // Will load the images from the IPFS files.
   };
-      
+
   // Reset state and check for highscore
   const gameOver = () => {
     setIsLost(true);
@@ -269,13 +269,13 @@ export default function Game() {
     });
   };
 
-   // Update snake.head, snake.trail and apple positions. Check for collisions.
-   const spellWord = () => {
-      // Check for collision with walls
-      const nextHeadPosition = {
-        x: snake.head.x + velocity.dx,
-        y: snake.head.y + velocity.dy,
-      };
+  // Update snake.head, snake.trail and apple positions. Check for collisions.
+  const spellWord = () => {
+    // Check for collision with walls
+    const nextHeadPosition = {
+      x: snake.head.x + velocity.dx,
+      y: snake.head.y + velocity.dy,
+    };
   };
 
   // Render Hook
@@ -335,7 +335,7 @@ export default function Game() {
             setOldVelocity(velocity);
             setVelocity(velocityDelta);
           }
-          location.href="./spell"
+          location.href = "./spell";
           break;
         default:
           break;
@@ -360,7 +360,7 @@ export default function Game() {
   return (
     <Page title={title}>
       <div className="flex flex-col items-center pt-10 space-y-7">
-        <img src={dog}/>
+        <img src={dog.src} />
         <canvas
           ref={canvasRef}
           width={WIDTH + 1}
