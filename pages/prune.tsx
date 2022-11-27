@@ -55,6 +55,7 @@ export default function Prune() {
     if (!cidRef.current) return;
     if (!rewardRef.current) return;
 
+    // TODO: replace when contract is deployed
     // if (!parseInt(rewardRef.current.value)) return;
 
     // const op = await Tezos.contract.transfer({
