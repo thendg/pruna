@@ -8,11 +8,9 @@
 }
 */
 
-import { Web3Storage } from "web3.storage";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { PrismaClient } from "@prisma/client";
-import { getIPFSFromDirectory, listIPFSDirectory } from "../utils";
-import { CIDString } from "web3.storage/dist/src/lib/interface";
+import { getIPFSFromDirectory, listIPFSDirectory, getIPFSFile } from "../utils";
 
 const prisma = new PrismaClient(); // TODO implement singleton?
 
@@ -30,8 +28,6 @@ export type PrunaJSON = {
   pruners: number;
   threshold: number;
 };
-
-
 
 async function get(
   req: NextApiRequest,
@@ -93,7 +89,3 @@ export default async function handler(
   else if (req.method === "POST") await post(req, res);
   else res.status(400).send("Bad HTTP method");
 }
-function getIPFSFile(cid: CIDString): PrunaJSON | PromiseLike<PrunaJSON> {
-  throw new Error("Function not implemented.");
-}
-

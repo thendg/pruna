@@ -1,8 +1,9 @@
 // Adapted from https://github.com/marcmll/next-snake
-import { FormEvent, useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import useInterval from "@use-it/interval";
-import Page from "../components/core/Page";
-import dog from "../components/dog.png";
+import Page from "../../components/core/Page";
+import { useRouter } from "next/router";
+import { FeatureJSONResponse } from "../api/feature/[cid]";
 
 const LETTERS = [
   "A",
@@ -62,6 +63,16 @@ export default function Game() {
   // Canvas Settings
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
+  const router = useRouter();
+  const { cid } = router.query;
+  const [imageCID, setImageCID] = useState("");
+
+  async function setImage() {
+    const res = await fetch(`/api/feature/${cid}`);
+    const imageJSON: FeatureJSONResponse = await res.json();
+    setImageCID(imageJSON.cid);
+  }
+
   // Game State
 
   const [countDown, setCountDown] = useState(4);
@@ -78,6 +89,7 @@ export default function Game() {
   const [letters, setLetters] = useState<Letter[]>([]);
   const [endpoint, setEndpoint] = useState<Position>({ x: 0, y: 0 });
   const [velocity, setVelocity] = useState<Velocity>({ dx: 0, dy: 0 });
+  const [oldVelocity, setOldVelocity] = useState<Velocity | null>(null);
   const [previousVelocity, setPreviousVelocity] = useState<Velocity>({
     dx: 0,
     dy: 0,
@@ -105,7 +117,8 @@ export default function Game() {
   };
 
   // Initialise state and start countdown
-  const startGame = () => {
+  const startGame = async () => {
+    await setImage();
     setIsLost(false);
     setInventory([]);
     setSnake({
@@ -346,17 +359,17 @@ export default function Game() {
   // Event Listener: Key Presses
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      let velocity = { dx: 0, dy: 0 };
+      let velocityDelta = { dx: 0, dy: 0 };
 
       switch (e.key) {
         case "ArrowRight":
-          velocity = { dx: 1, dy: 0 };
+          velocityDelta = { dx: 1, dy: 0 };
           break;
         case "ArrowLeft":
-          velocity = { dx: -1, dy: 0 };
+          velocityDelta = { dx: -1, dy: 0 };
           break;
         case "ArrowDown":
-          velocity = { dx: 0, dy: 1 };
+          velocityDelta = { dx: 0, dy: 1 };
           break;
         case "ArrowUp":
           velocityDelta = { dx: 0, dy: -1 };
@@ -395,7 +408,11 @@ export default function Game() {
   return (
     <Page title={title}>
       <div className="flex flex-col items-center pt-10 space-y-7">
-        <img src={dog.src} />
+        {imageCID !== "" && (
+          <img
+            src={`https://api.ipfsbrowser.com/ipfs/get.php?hash=${imageCID}`}
+          />
+        )}
         <canvas
           ref={canvasRef}
           width={WIDTH + 1}
