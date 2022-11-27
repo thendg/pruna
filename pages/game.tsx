@@ -1,8 +1,8 @@
 // Adapted from https://github.com/marcmll/next-snake
-
-import { useState, useEffect, useRef } from "react";
+import { FormEvent, useState, useEffect, useRef } from "react";
 import useInterval from "@use-it/interval";
 import Page from "../components/core/Page";
+import dog from "../components/dog.png";
 
 const LETTERS = [
   "A",
@@ -119,6 +119,7 @@ export default function Game() {
     setVelocity({ dx: 0, dy: -1 });
     setRunning(true);
     setCountDown(3);
+    // loadPhoto();  // Will load the images from the IPFS files.
   };
 
   // Reset state and check for highscore
@@ -302,6 +303,15 @@ export default function Game() {
     });
   };
 
+  // Update snake.head, snake.trail and apple positions. Check for collisions.
+  const spellWord = () => {
+    // Check for collision with walls
+    const nextHeadPosition = {
+      x: snake.head.x + velocity.dx,
+      y: snake.head.y + velocity.dy,
+    };
+  };
+
   // Render Hook
   useEffect(() => {
     const canvas = canvasRef?.current;
@@ -349,7 +359,18 @@ export default function Game() {
           velocity = { dx: 0, dy: 1 };
           break;
         case "ArrowUp":
-          velocity = { dx: 0, dy: -1 };
+          velocityDelta = { dx: 0, dy: -1 };
+          break;
+        case "p":
+          if (oldVelocity) {
+            console.log(oldVelocity);
+            velocityDelta = oldVelocity;
+            setOldVelocity(null);
+          } else {
+            setOldVelocity(velocity);
+            setVelocity(velocityDelta);
+          }
+          location.href = "./spell";
           break;
         default:
           break;
@@ -372,8 +393,9 @@ export default function Game() {
   }, [previousVelocity]);
 
   return (
-    <Page title={title} logo>
-      <div className="flex flex-col items-center pt-40 space-y-7">
+    <Page title={title}>
+      <div className="flex flex-col items-center pt-10 space-y-7">
+        <img src={dog.src} />
         <canvas
           ref={canvasRef}
           width={WIDTH + 1}

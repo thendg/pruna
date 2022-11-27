@@ -30,7 +30,7 @@ function BatchView({ origin }: { origin: string }) {
         Show pruning progress here // TODO
       </p>
       <a
-        href="#"
+        href="/game"
         className="inline-flex items-center px-3 py-2 text-sm font-medium text-center text-white bg-black rounded-lg hover:bg-stone-900 focus:ring-4 focus:outline-none "
       >
         Play

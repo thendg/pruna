@@ -27,7 +27,6 @@ export default function Page({
             <img src="./logo.png" alt="Pruna logo"></img>
           </Link>
         )}
-
         {children}
       </motion.div>
     </>
