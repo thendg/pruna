@@ -59,10 +59,7 @@ const get_batch_reward_amount = (resource: string): return_ =>
 /* mint, adds to ledger <certificate resource, source address> */
 const mint = (resource: string, sender_address: address, stor : storage): return_ => {stor.ledger_nft_certificates = stor.ledger_nft_certificates.add(resource, sender_address)};
 
-let adding_batch = (resource: string, amount: tez, stor: storage) => {
-  new_batch(resource, sender_address, stor);
-  log_reward(resource, amount, stor);
-};
+
 
 
 /* Main access point that dispatches to the entrypoints according to
@@ -71,7 +68,11 @@ const main = (params: parameter, stor: storage) : [ list<operation> , storage ] 
  return [
    list([]),    // No operations
    (match (action, {
-    Add_batch: (resource, reward_amount) => adding_batch(resource, reward_amount, stor),
+    Add_batch: (resource, reward_amount) => {
+      let new_stor = new_batch(other_param, sender_address, stor) in
+      let new_stor = log_reward(resource, reward_amount, new_stor) in
+      [], new_stor,
+    },
     Mint_certificate: (resource, reward_amount) => mint(resource, sender_address, stor),
     Pay_winners: (resource, winners) => pay_winners(resource, winners),
     None:     ()  => [], storage}))
