@@ -2,6 +2,7 @@
 import { FormEvent, useState, useEffect, useRef } from "react";
 import useInterval from "@use-it/interval";
 import Page from "../components/core/Page";
+import dog from "../components/dog.jpg";
 
 const LETTERS = [
   "A",
@@ -357,9 +358,9 @@ export default function Game() {
   }, [previousVelocity]);
 
   return (
-    <Page title={title} logo>
+    <Page title={title}>
       <div className="flex flex-col items-center pt-10 space-y-7">
-        <img src={require("../components/dog.jpg").default}/>
+        <img src={dog}/>
         <canvas
           ref={canvasRef}
           width={WIDTH + 1}

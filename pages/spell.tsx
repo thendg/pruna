@@ -6,12 +6,12 @@ const title = "Pruna - Spell";
 
 
 const goBack = () => {
-    <a href="/game"></a>
+    return <a href="/game"></a>
 };
 
 export default function Spell() {
   return (
-    <Page title={title} logo>
+    <Page title={title}>
       <div className="pt-10 flex flex-col items-center justify-center space-y-5">
         <span className="text-black text-8xl font-inter font-light">Spell your Word</span>
 
