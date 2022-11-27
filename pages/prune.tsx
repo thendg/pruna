@@ -30,7 +30,7 @@ export default function Prune() {
   const Tezos = new TezosToolkit(RPC_URL);
   if (wallet) Tezos.setWalletProvider(wallet);
 
-  async function submit(event: FormEvent<HTMLFormElement>) {
+  async function batch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!cidRef.current) return;
 
@@ -54,26 +54,28 @@ export default function Prune() {
     event.preventDefault();
     if (!cidRef.current) return;
     if (!rewardRef.current) return;
-    if (!parseInt(rewardRef.current.value)) return;
 
-    const op = await Tezos.contract.transfer({
-      to: CONTRACT_ADDRESS,
-      amount: parseInt(rewardRef.current.value),
-    });
-    try {
-      await op.confirmation(1);
-      console.log(`Operation Injected: https://ghost.tzstats.com/${op.hash}`);
-    } catch (error) {
-      console.log(error);
-      return;
-    }
+    // if (!parseInt(rewardRef.current.value)) return;
 
-    const contract = await Tezos.contract.at(CONTRACT_ADDRESS);
-    contract.methods.Add_batch(cidRef.current.value, rewardRef.current.value);
+    // const op = await Tezos.contract.transfer({
+    //   to: CONTRACT_ADDRESS,
+    //   amount: parseInt(rewardRef.current.value),
+    // });
+    // try {
+    //   await op.confirmation(1);
+    //   console.log(`Operation Injected: https://ghost.tzstats.com/${op.hash}`);
+    // } catch (error) {
+    //   console.log(error);
+    //   return;
+    // }
+
+    // const contract = await Tezos.contract.at(CONTRACT_ADDRESS);
+    // contract.methods.Add_batch(cidRef.current.value, rewardRef.current.value);
 
     const data = await fetch(`/api/batch/${cidRef.current.value}`, {
       method: "POST",
     });
+
     const message =
       data.status == 200 ? "Success" : "Failed: " + data.statusText;
 
@@ -90,7 +92,7 @@ export default function Prune() {
         <span className="text-black text-8xl font-inter font-light">Prune</span>
 
         <div className="flex space-y-2 relative w-full items-center flex-col">
-          <form className="relative w-1/3" onSubmit={submit}>
+          <form className="relative w-1/3" onSubmit={batch}>
             <input
               ref={cidRef}
               className="block p-4 pl-10 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:outline-none"
@@ -109,7 +111,7 @@ export default function Prune() {
           {files.length && (
             <form className="relative w-1/3" onSubmit={confirm}>
               <input
-                ref={cidRef}
+                ref={rewardRef}
                 className="block p-4 pl-10 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:outline-none"
                 placeholder="Batch Reward"
                 required

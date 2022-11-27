@@ -20,8 +20,42 @@ export type BatchJSONResponse = {
   batch: BatchFile[];
 };
 
+export type PrunaJSON = {
+  type: "icb";
+  pruners: number;
+  threshold: number;
+};
+
 function getStorageClient() {
   return new Web3Storage({ token: process.env.WEB3STORAGE_TOKEN! });
+}
+
+async function getIPFSFile(cid: string) {
+  const res = await fetch(
+    `https://api.ipfsbrowser.com/ipfs/get.php?hash=${cid}`
+  );
+  return await res.json();
+}
+
+async function listIPFSDirectory(cid: string) {
+  const client = getStorageClient();
+  const web3Res = await client.get(cid as string);
+  if (web3Res) {
+    if (!web3Res.ok)
+      throw Error(
+        `failed to get ${cid} - [${web3Res.status}] ${web3Res.statusText}`
+      );
+
+    return await web3Res.files();
+  } else throw Error("Failed to get response from Web3.Storage");
+}
+
+async function getIPFSFromDirectory(directoryCID: string, filename: string) {
+  const files = await listIPFSDirectory(directoryCID as string);
+
+  const file = files.find((file) => file.name == filename);
+  if (!file) throw Error(`Failed to find ${directoryCID}/${filename}`);
+  return file;
 }
 
 async function get(
@@ -34,32 +68,43 @@ async function get(
     return;
   }
 
-  const client = getStorageClient();
-  const web3Res = await client.get(cid as string);
-  if (web3Res) {
-    if (!web3Res.ok) {
-      res
-        .status(400)
-        .send(
-          `failed to get ${cid} - [${web3Res.status}] ${web3Res.statusText}`
-        );
-      return;
-    }
-
-    const files = await web3Res.files();
+  try {
+    const files = await listIPFSDirectory(cid as string);
+    if (!files) throw Error(`No files returned from CID: ${cid}`);
     const batch = [];
-    for (const file of files) {
-      batch.push({ path: file.name, CID: file.cid });
-    }
-
+    for (const file of files) batch.push({ path: file.name, CID: file.cid });
     res.status(200).json({ batch });
-  } else res.status(500).send("Failed to get response from Web3.Storage");
+  } catch (err: any) {
+    res.status(500).send(err);
+  }
 }
 
 async function post(
   req: NextApiRequest,
   res: NextApiResponse<BatchJSONResponse | string>
-) {}
+) {
+  const { cid } = req.query;
+  if (!cid) {
+    res.status(400).send("No CID supplied in query");
+    return;
+  }
+
+  try {
+    const prunaJSONFile = await getIPFSFromDirectory(
+      cid as string,
+      "pruna.json"
+    );
+    const prunaJSON: PrunaJSON = await getIPFSFile(prunaJSONFile.cid);
+    const features = await getIPFSFromDirectory(cid as string, "features");
+    const files = listIPFSDirectory(features.cid);
+
+    // TODO: add pruna json and files to db
+
+    res.status(200);
+  } catch (err: any) {
+    res.status(500).send(err);
+  }
+}
 
 export default async function handler(
   req: NextApiRequest,
