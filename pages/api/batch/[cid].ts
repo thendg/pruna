@@ -10,6 +10,9 @@
 
 import { Web3Storage } from "web3.storage";
 import type { NextApiRequest, NextApiResponse } from "next";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient(); // TODO implement singleton?
 
 export type BatchFile = {
   path: string;
@@ -95,10 +98,14 @@ async function post(
       "pruna.json"
     );
     const prunaJSON: PrunaJSON = await getIPFSFile(prunaJSONFile.cid);
-    const features = await getIPFSFromDirectory(cid as string, "features");
-    const files = listIPFSDirectory(features.cid);
 
-    // TODO: add pruna json and feature files to db
+    await prisma.batch.create({
+      data: {
+        origin: cid as string,
+        pruners: prunaJSON.pruners,
+        threshold: prunaJSON.threshold,
+      },
+    });
 
     res.status(200);
   } catch (err: any) {

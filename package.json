@@ -9,9 +9,10 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@airgap/beacon-types": "^3.3.0",
+    "@prisma/client": "^4.6.1",
     "@taquito/beacon-wallet": "^14.1.0",
     "@taquito/taquito": "^14.1.0",
-    "@prisma/client": "^4.6.1",
     "@types/node": "18.11.9",
     "@types/react": "18.0.25",
     "@types/react-dom": "18.0.9",
@@ -25,7 +26,6 @@
     "web3.storage": "^4.4.0"
   },
   "devDependencies": {
-    "@airgap/beacon-types": "^3.3.0",
     "autoprefixer": "^10.4.13",
     "postcss": "^8.4.19",
     "prisma": "^4.6.1",

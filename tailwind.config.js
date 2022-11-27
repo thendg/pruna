@@ -9,6 +9,7 @@ module.exports = {
       fontFamily: {
         inter: "'Inter', sans-serif",
         monoton: "'Monoton', cursive",
+        "source-code-pro": "'Source Code Pro', monospace",
       },
       animation: {
         border: "border 4s ease infinite",
