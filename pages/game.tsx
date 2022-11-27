@@ -35,9 +35,12 @@ const LETTERS = [
 
 type UppercaseLetter = typeof LETTERS[number];
 
-type Letter = {
+type Position = {
   x: number;
   y: number;
+};
+
+type Letter = Position & {
   char: UppercaseLetter;
 };
 
@@ -73,7 +76,7 @@ export default function Game() {
     trail: [],
   });
   const [letters, setLetters] = useState<Letter[]>([]);
-  const [oldVelocity, setOldVelocity] = useState<Velocity | null>(null);
+  const [endpoint, setEndpoint] = useState<Position>({ x: 0, y: 0 });
   const [velocity, setVelocity] = useState<Velocity>({ dx: 0, dy: 0 });
   const [previousVelocity, setPreviousVelocity] = useState<Velocity>({
     dx: 0,
@@ -86,9 +89,11 @@ export default function Game() {
   const randomLetter = (): Letter => {
     const x = Math.floor(Math.random() * (WIDTH / GRID_SIZE));
     const y = Math.floor(Math.random() * (HEIGHT / GRID_SIZE));
-    // Check if random position interferes with snake head or trail
     if (
-      (snake.head.x === x && snake.head.y === y) ||
+      (snake.head.x === x &&
+        snake.head.y === y &&
+        endpoint.x === x &&
+        endpoint.y === y) ||
       snake.trail.some((snakePart) => snakePart.x === x && snakePart.y === y)
     ) {
       return randomLetter();
@@ -122,6 +127,15 @@ export default function Game() {
     setRunning(false);
     setVelocity({ dx: 0, dy: 0 });
     setCountDown(4);
+  };
+
+  const fillText = (
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    t: string
+  ) => {
+    ctx.fillText(t, x, y);
   };
 
   const fillRect = (
@@ -183,30 +197,50 @@ export default function Game() {
     });
   };
 
-  function drawApple(apple: Letter, ctx: CanvasRenderingContext2D) {
+  function drawEndpoint(ctx: CanvasRenderingContext2D) {
+    ctx.fillStyle = "#003366"; // '#38C172' // '#F4CA64'
+
+    if (
+      endpoint &&
+      typeof endpoint.x !== "undefined" &&
+      typeof endpoint.y !== "undefined"
+    ) {
+      fillRect(
+        ctx,
+        endpoint.x * GRID_SIZE,
+        endpoint.y * GRID_SIZE,
+        GRID_SIZE,
+        GRID_SIZE
+      );
+    }
+  }
+
+  function drawLetter(letter: Letter, ctx: CanvasRenderingContext2D) {
     ctx.fillStyle = "#DC3030"; // '#38C172' // '#F4CA64'
     ctx.strokeStyle = "#881A1B"; // '#187741' // '#8C6D1F
 
     if (
-      apple &&
-      typeof apple.x !== "undefined" &&
-      typeof apple.y !== "undefined"
+      letter &&
+      typeof letter.x !== "undefined" &&
+      typeof letter.y !== "undefined"
     ) {
       fillRect(
         ctx,
-        apple.x * GRID_SIZE,
-        apple.y * GRID_SIZE,
+        letter.x * GRID_SIZE,
+        letter.y * GRID_SIZE,
         GRID_SIZE,
         GRID_SIZE
       );
 
       strokeRect(
         ctx,
-        apple.x * GRID_SIZE,
-        apple.y * GRID_SIZE,
+        letter.x * GRID_SIZE,
+        letter.y * GRID_SIZE,
         GRID_SIZE,
         GRID_SIZE
       );
+
+      fillText(ctx, letter.x * GRID_SIZE, letter.y * GRID_SIZE, letter.char);
     }
   }
 
@@ -275,7 +309,8 @@ export default function Game() {
 
     if (ctx && !isLost) {
       clearCanvas(ctx);
-      for (const apple of letters) drawApple(apple, ctx);
+      drawEndpoint(ctx);
+      for (const apple of letters) drawLetter(apple, ctx);
       drawSnake(ctx);
     }
   }, [snake]);
@@ -301,30 +336,20 @@ export default function Game() {
   // Event Listener: Key Presses
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      let velocityDelta = { dx: 0, dy: 0 };
+      let velocity = { dx: 0, dy: 0 };
 
       switch (e.key) {
         case "ArrowRight":
-          velocityDelta = { dx: 1, dy: 0 };
+          velocity = { dx: 1, dy: 0 };
           break;
         case "ArrowLeft":
-          velocityDelta = { dx: -1, dy: 0 };
+          velocity = { dx: -1, dy: 0 };
           break;
         case "ArrowDown":
-          velocityDelta = { dx: 0, dy: 1 };
+          velocity = { dx: 0, dy: 1 };
           break;
         case "ArrowUp":
-          velocityDelta = { dx: 0, dy: -1 };
-          break;
-        case "p":
-          if (oldVelocity) {
-            console.log(oldVelocity);
-            velocityDelta = oldVelocity;
-            setOldVelocity(null);
-          } else {
-            setOldVelocity(velocity);
-            setVelocity(velocityDelta);
-          }
+          velocity = { dx: 0, dy: -1 };
           break;
         default:
           break;
@@ -332,11 +357,11 @@ export default function Game() {
 
       if (
         !(
-          previousVelocity.dx + velocityDelta.dx === 0 &&
-          previousVelocity.dy + velocityDelta.dy === 0
+          previousVelocity.dx + velocity.dx === 0 &&
+          previousVelocity.dy + velocity.dy === 0
         )
       ) {
-        setVelocity(velocityDelta);
+        setVelocity(velocity);
       }
     };
 
