@@ -1,13 +1,15 @@
 import { useState, useEffect, useRef } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import useInterval from '@use-it/interval'
+import { type } from 'os';
 
-import { HeadComponent as Head } from 'components/Head'
+const currentLetters: typeof Letter[] = [];
 
-type Apple = {
-  x: number
-  y: number
-}
+const Letter = {
+  x:-1, 
+  y:-1, 
+  //sayHello:function() {  }  //Type template 
+} 
 
 type Velocity = {
   dx: number
@@ -40,7 +42,11 @@ export default function SnakeGame() {
     head: { x: 12, y: 9 },
     trail: [],
   })
-  const [apple, setApple] = useState<Apple>({ x: -1, y: -1 })
+  const newLetter = function(obj: { x: number, y : number }) { 
+    console.log("x co-ord :"+obj.x) 
+    console.log("y co-ord :"+obj.y) 
+ } 
+  //const [letter, setLetter] = useState<typeof Letter>({ x: -1, y: -1 })
   const [velocity, setVelocity] = useState<Velocity>({ dx: 0, dy: 0 })
   const [previousVelocity, setPreviousVelocity] = useState<Velocity>({
     dx: 0,
@@ -50,16 +56,20 @@ export default function SnakeGame() {
   const clearCanvas = (ctx: CanvasRenderingContext2D) =>
     ctx.clearRect(-1, -1, canvasWidth + 2, canvasHeight + 2)
 
-  const generateApplePosition = (): Apple => {
+  const generateLetterPosition = (): typeof Letter => {
     const x = Math.floor(Math.random() * (canvasWidth / canvasGridSize))
     const y = Math.floor(Math.random() * (canvasHeight / canvasGridSize))
     // Check if random position interferes with snake head or trail
-    if (
-      (snake.head.x === x && snake.head.y === y) ||
-      snake.trail.some((snakePart) => snakePart.x === x && snakePart.y === y)
-    ) {
-      return generateApplePosition()
+    if ( (snake.head.x === x && snake.head.y === y) || snake.trail.some((snakePart) => snakePart.x === x && snakePart.y === y)) {
+      return generateLetterPosition()     // If collision, try to generate random co-ords again.
     }
+    for(const letter of currentLetters){
+      if( (letter.x === x && letter.y === y) )
+      {
+        return generateLetterPosition()     // If collision, try to generate random co-ords again.
+      }
+    }
+    currentLetters.push(letter);
     return { x, y }
   }
 
@@ -72,7 +82,9 @@ export default function SnakeGame() {
       head: { x: 12, y: 9 },
       trail: [],
     })
-    setApple(generateApplePosition())
+    for (let i = 0; i < 5; i++) {
+      setLetter(generateLetterPosition())
+    }
     setVelocity({ dx: 0, dy: -1 })
     setRunning(true)
     setNewHighscore(false)
@@ -151,34 +163,34 @@ export default function SnakeGame() {
     })
   }
 
-  const drawApple = (ctx: CanvasRenderingContext2D) => {
+  const drawLetter = (ctx: CanvasRenderingContext2D) => {
     ctx.fillStyle = '#DC3030' // '#38C172' // '#F4CA64'
     ctx.strokeStyle = '#881A1B' // '#187741' // '#8C6D1F
 
     if (
-      apple &&
-      typeof apple.x !== 'undefined' &&
-      typeof apple.y !== 'undefined'
+      letter &&
+      typeof letter.x !== 'undefined' &&
+      typeof letter.y !== 'undefined'
     ) {
       fillRect(
         ctx,
-        apple.x * canvasGridSize,
-        apple.y * canvasGridSize,
+        letter.x * canvasGridSize,
+        letter.y * canvasGridSize,
         canvasGridSize,
         canvasGridSize
       )
 
       strokeRect(
         ctx,
-        apple.x * canvasGridSize,
-        apple.y * canvasGridSize,
+        letter.x * canvasGridSize,
+        letter.y * canvasGridSize,
         canvasGridSize,
         canvasGridSize
       )
     }
   }
 
-  // Update snake.head, snake.trail and apple positions. Check for collisions.
+  // Update snake.head, snake.trail and Letter positions. Check for collisions.
   const updateSnake = () => {
     // Check for collision with walls
     const nextHeadPosition = {
@@ -194,10 +206,10 @@ export default function SnakeGame() {
       gameOver()
     }
 
-    // Check for collision with apple
-    if (nextHeadPosition.x === apple.x && nextHeadPosition.y === apple.y) {
+    // Check for collision with Letter
+    if (nextHeadPosition.x === letter.x && nextHeadPosition.y === letter.y) {
       setScore((prevScore) => prevScore + 1)
-      setApple(generateApplePosition())
+      setLetter(generateLetterPosition())
     }
 
     const updatedSnakeTrail = [...snake.trail, { ...snake.head }]
@@ -228,7 +240,7 @@ export default function SnakeGame() {
 
     if (ctx && !isLost) {
       clearCanvas(ctx)
-      drawApple(ctx)
+      drawLetter(ctx)
       drawSnake(ctx)
     }
   }, [snake])
@@ -330,13 +342,12 @@ export default function SnakeGame() {
   }, [previousVelocity])
 
   return (
-    <>
-      <Head />
-      <main>
+      <main className="flex justify-center items-center flex-col space-y-5">
         <canvas
           ref={canvasRef}
           width={canvasWidth + 1}
           height={canvasHeight + 1}
+          className='bg-stone-800 border-4 border-black'
         />
         <section>
           <div className="score">
@@ -379,13 +390,5 @@ export default function SnakeGame() {
           </div>
         )}
       </main>
-      <footer>
-        Copyright &copy; <a href="https://mueller.dev">Marc Müller</a> 2022
-        &nbsp;|&nbsp;{' '}
-        <a href="https://github.com/marcmll/next-snake">
-          <FontAwesomeIcon icon={['fab', 'github']} /> Github
-        </a>
-      </footer>
-    </>
   )
 }
