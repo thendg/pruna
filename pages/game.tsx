@@ -1,108 +1,128 @@
-import { useState, useEffect, useRef } from 'react'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import useInterval from '@use-it/interval'
-import { type } from 'os';
+// Adapted from https://github.com/marcmll/next-snake
 
-const currentLetters: typeof Letter[] = [];
+import { useState, useEffect, useRef } from "react";
+import useInterval from "@use-it/interval";
+import Page from "../components/core/Page";
 
-const Letter = {
-  x:-1, 
-  y:-1, 
-  //sayHello:function() {  }  //Type template 
-} 
+const LETTERS = [
+  "A",
+  "B",
+  "C",
+  "D",
+  "E",
+  "F",
+  "G",
+  "H",
+  "I",
+  "J",
+  "K",
+  "L",
+  "M",
+  "N",
+  "O",
+  "P",
+  "Q",
+  "R",
+  "S",
+  "T",
+  "U",
+  "V",
+  "W",
+  "X",
+  "Y",
+  "Z",
+] as const;
+
+type UppercaseLetter = typeof LETTERS[number];
+
+type Letter = {
+  x: number;
+  y: number;
+  char: UppercaseLetter;
+};
 
 type Velocity = {
-  dx: number
-  dy: number
-}
+  dx: number;
+  dy: number;
+};
 
-export default function SnakeGame() {
+const title = "Pruna - Hunter";
+
+const WIDTH = 500;
+const HEIGHT = 380;
+const GRID_SIZE = 20;
+
+const NUM_LETTERS = 5;
+const GAME_DELAY = 100;
+
+export default function Game() {
   // Canvas Settings
-  const canvasRef = useRef<HTMLCanvasElement | null>(null)
-  const canvasWidth = 500
-  const canvasHeight = 380
-  const canvasGridSize = 20
-
-  // Game Settings
-  const minGameSpeed = 10
-  const maxGameSpeed = 15
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // Game State
-  const [gameDelay, setGameDelay] = useState<number>(1000 / minGameSpeed)
-  const [countDown, setCountDown] = useState<number>(4)
-  const [running, setRunning] = useState(false)
-  const [isLost, setIsLost] = useState(false)
-  const [highscore, setHighscore] = useState(0)
-  const [newHighscore, setNewHighscore] = useState(false)
-  const [score, setScore] = useState(0)
+
+  const [countDown, setCountDown] = useState(4);
+  const [running, setRunning] = useState(false);
+  const [isLost, setIsLost] = useState(false);
+  const [inventory, setInventory] = useState<UppercaseLetter[]>([]);
   const [snake, setSnake] = useState<{
-    head: { x: number; y: number }
-    trail: Array<any>
+    head: { x: number; y: number };
+    trail: Array<any>;
   }>({
     head: { x: 12, y: 9 },
     trail: [],
-  })
-  const newLetter = function(obj: { x: number, y : number }) { 
-    console.log("x co-ord :"+obj.x) 
-    console.log("y co-ord :"+obj.y) 
- } 
-  //const [letter, setLetter] = useState<typeof Letter>({ x: -1, y: -1 })
-  const [velocity, setVelocity] = useState<Velocity>({ dx: 0, dy: 0 })
+  });
+  const [letters, setLetters] = useState<Letter[]>([]);
+  const [oldVelocity, setOldVelocity] = useState<Velocity | null>(null);
+  const [velocity, setVelocity] = useState<Velocity>({ dx: 0, dy: 0 });
   const [previousVelocity, setPreviousVelocity] = useState<Velocity>({
     dx: 0,
     dy: 0,
-  })
+  });
 
   const clearCanvas = (ctx: CanvasRenderingContext2D) =>
-    ctx.clearRect(-1, -1, canvasWidth + 2, canvasHeight + 2)
+    ctx.clearRect(-1, -1, WIDTH + 2, HEIGHT + 2);
 
-  const generateLetterPosition = (): typeof Letter => {
-    const x = Math.floor(Math.random() * (canvasWidth / canvasGridSize))
-    const y = Math.floor(Math.random() * (canvasHeight / canvasGridSize))
+  const randomLetter = (): Letter => {
+    const x = Math.floor(Math.random() * (WIDTH / GRID_SIZE));
+    const y = Math.floor(Math.random() * (HEIGHT / GRID_SIZE));
     // Check if random position interferes with snake head or trail
-    if ( (snake.head.x === x && snake.head.y === y) || snake.trail.some((snakePart) => snakePart.x === x && snakePart.y === y)) {
-      return generateLetterPosition()     // If collision, try to generate random co-ords again.
+    if (
+      (snake.head.x === x && snake.head.y === y) ||
+      snake.trail.some((snakePart) => snakePart.x === x && snakePart.y === y)
+    ) {
+      return randomLetter();
     }
-    for(const letter of currentLetters){
-      if( (letter.x === x && letter.y === y) )
-      {
-        return generateLetterPosition()     // If collision, try to generate random co-ords again.
-      }
-    }
-    currentLetters.push(letter);
-    return { x, y }
-  }
+
+    const index = Math.floor(Math.random() * LETTERS.length);
+    if (inventory.includes(LETTERS[index])) return randomLetter();
+    else return { x, y, char: LETTERS[index] };
+  };
 
   // Initialise state and start countdown
   const startGame = () => {
-    setGameDelay(1000 / minGameSpeed)
-    setIsLost(false)
-    setScore(0)
+    setIsLost(false);
+    setInventory([]);
     setSnake({
       head: { x: 12, y: 9 },
       trail: [],
-    })
-    for (let i = 0; i < 5; i++) {
-      setLetter(generateLetterPosition())
-    }
-    setVelocity({ dx: 0, dy: -1 })
-    setRunning(true)
-    setNewHighscore(false)
-    setCountDown(3)
-  }
+    });
+    const apples: Letter[] = [];
+    for (let i = 0; i < NUM_LETTERS; i++) apples.push(randomLetter());
+
+    setLetters(apples);
+    setVelocity({ dx: 0, dy: -1 });
+    setRunning(true);
+    setCountDown(3);
+  };
 
   // Reset state and check for highscore
   const gameOver = () => {
-    if (score > highscore) {
-      setHighscore(score)
-      localStorage.setItem('highscore', score.toString())
-      setNewHighscore(true)
-    }
-    setIsLost(true)
-    setRunning(false)
-    setVelocity({ dx: 0, dy: 0 })
-    setCountDown(4)
-  }
+    setIsLost(true);
+    setRunning(false);
+    setVelocity({ dx: 0, dy: 0 });
+    setCountDown(4);
+  };
 
   const fillRect = (
     ctx: CanvasRenderingContext2D,
@@ -111,8 +131,8 @@ export default function SnakeGame() {
     w: number,
     h: number
   ) => {
-    ctx.fillRect(x, y, w, h)
-  }
+    ctx.fillRect(x, y, w, h);
+  };
 
   const strokeRect = (
     ctx: CanvasRenderingContext2D,
@@ -121,100 +141,115 @@ export default function SnakeGame() {
     w: number,
     h: number
   ) => {
-    ctx.strokeRect(x + 0.5, y + 0.5, w, h)
-  }
+    ctx.strokeRect(x + 0.5, y + 0.5, w, h);
+  };
 
   const drawSnake = (ctx: CanvasRenderingContext2D) => {
-    ctx.fillStyle = '#0170F3'
-    ctx.strokeStyle = '#003779'
+    ctx.fillStyle = "#0170F3";
+    ctx.strokeStyle = "#003779";
 
     fillRect(
       ctx,
-      snake.head.x * canvasGridSize,
-      snake.head.y * canvasGridSize,
-      canvasGridSize,
-      canvasGridSize
-    )
+      snake.head.x * GRID_SIZE,
+      snake.head.y * GRID_SIZE,
+      GRID_SIZE,
+      GRID_SIZE
+    );
 
     strokeRect(
       ctx,
-      snake.head.x * canvasGridSize,
-      snake.head.y * canvasGridSize,
-      canvasGridSize,
-      canvasGridSize
-    )
+      snake.head.x * GRID_SIZE,
+      snake.head.y * GRID_SIZE,
+      GRID_SIZE,
+      GRID_SIZE
+    );
 
     snake.trail.forEach((snakePart) => {
       fillRect(
         ctx,
-        snakePart.x * canvasGridSize,
-        snakePart.y * canvasGridSize,
-        canvasGridSize,
-        canvasGridSize
-      )
+        snakePart.x * GRID_SIZE,
+        snakePart.y * GRID_SIZE,
+        GRID_SIZE,
+        GRID_SIZE
+      );
 
       strokeRect(
         ctx,
-        snakePart.x * canvasGridSize,
-        snakePart.y * canvasGridSize,
-        canvasGridSize,
-        canvasGridSize
-      )
-    })
-  }
+        snakePart.x * GRID_SIZE,
+        snakePart.y * GRID_SIZE,
+        GRID_SIZE,
+        GRID_SIZE
+      );
+    });
+  };
 
-  const drawLetter = (ctx: CanvasRenderingContext2D) => {
-    ctx.fillStyle = '#DC3030' // '#38C172' // '#F4CA64'
-    ctx.strokeStyle = '#881A1B' // '#187741' // '#8C6D1F
+  function drawApple(apple: Letter, ctx: CanvasRenderingContext2D) {
+    ctx.fillStyle = "#DC3030"; // '#38C172' // '#F4CA64'
+    ctx.strokeStyle = "#881A1B"; // '#187741' // '#8C6D1F
 
     if (
-      letter &&
-      typeof letter.x !== 'undefined' &&
-      typeof letter.y !== 'undefined'
+      apple &&
+      typeof apple.x !== "undefined" &&
+      typeof apple.y !== "undefined"
     ) {
       fillRect(
         ctx,
-        letter.x * canvasGridSize,
-        letter.y * canvasGridSize,
-        canvasGridSize,
-        canvasGridSize
-      )
+        apple.x * GRID_SIZE,
+        apple.y * GRID_SIZE,
+        GRID_SIZE,
+        GRID_SIZE
+      );
 
       strokeRect(
         ctx,
-        letter.x * canvasGridSize,
-        letter.y * canvasGridSize,
-        canvasGridSize,
-        canvasGridSize
-      )
+        apple.x * GRID_SIZE,
+        apple.y * GRID_SIZE,
+        GRID_SIZE,
+        GRID_SIZE
+      );
     }
   }
 
-  // Update snake.head, snake.trail and Letter positions. Check for collisions.
+  // Update snake.head, snake.trail and apple positions. Check for collisions.
   const updateSnake = () => {
     // Check for collision with walls
     const nextHeadPosition = {
       x: snake.head.x + velocity.dx,
       y: snake.head.y + velocity.dy,
-    }
+    };
+
     if (
       nextHeadPosition.x < 0 ||
       nextHeadPosition.y < 0 ||
-      nextHeadPosition.x >= canvasWidth / canvasGridSize ||
-      nextHeadPosition.y >= canvasHeight / canvasGridSize
+      nextHeadPosition.x >= WIDTH / GRID_SIZE ||
+      nextHeadPosition.y >= HEIGHT / GRID_SIZE
     ) {
-      gameOver()
+      gameOver();
     }
 
-    // Check for collision with Letter
-    if (nextHeadPosition.x === letter.x && nextHeadPosition.y === letter.y) {
-      setScore((prevScore) => prevScore + 1)
-      setLetter(generateLetterPosition())
+    // Check for collision with apple
+    for (let i = 0; i < letters.length; i++) {
+      if (
+        nextHeadPosition.x === letters[i].x &&
+        nextHeadPosition.y === letters[i].y
+      ) {
+        setInventory([...inventory, letters[i].char]);
+
+        let applesTemp = [...letters];
+        let item = { ...applesTemp[i] };
+        const { x, y, char } = randomLetter();
+        item.x = x;
+        item.y = y;
+        item.char = char;
+        applesTemp[i] = item;
+        setLetters(applesTemp);
+      }
     }
 
-    const updatedSnakeTrail = [...snake.trail, { ...snake.head }]
+    const updatedSnakeTrail = [...snake.trail, { ...snake.head }];
     // Remove trail history beyond snake trail length (score + 2)
-    while (updatedSnakeTrail.length > score + 2) updatedSnakeTrail.shift()
+    while (updatedSnakeTrail.length > inventory.length + 2)
+      updatedSnakeTrail.shift();
     // Check for snake colliding with itsself
     if (
       updatedSnakeTrail.some(
@@ -223,172 +258,118 @@ export default function SnakeGame() {
           snakePart.y === nextHeadPosition.y
       )
     )
-      gameOver()
+      gameOver();
 
     // Update state
-    setPreviousVelocity({ ...velocity })
+    setPreviousVelocity({ ...velocity });
     setSnake({
       head: { ...nextHeadPosition },
       trail: [...updatedSnakeTrail],
-    })
-  }
+    });
+  };
 
-  // Game Hook
+  // Render Hook
   useEffect(() => {
-    const canvas = canvasRef?.current
-    const ctx = canvas?.getContext('2d')
+    const canvas = canvasRef?.current;
+    const ctx = canvas?.getContext("2d");
 
     if (ctx && !isLost) {
-      clearCanvas(ctx)
-      drawLetter(ctx)
-      drawSnake(ctx)
+      clearCanvas(ctx);
+      for (const apple of letters) drawApple(apple, ctx);
+      drawSnake(ctx);
     }
-  }, [snake])
+  }, [snake]);
 
-  // Game Update Interval
+  // Game Update
   useInterval(
     () => {
       if (!isLost) {
-        updateSnake()
+        updateSnake();
       }
     },
-    running && countDown === 0 ? gameDelay : null
-  )
+    running && countDown === 0 ? GAME_DELAY : null
+  );
 
   // Countdown Interval
   useInterval(
     () => {
-      setCountDown((prevCountDown) => prevCountDown - 1)
+      setCountDown((prevCountDown) => prevCountDown - 1);
     },
     countDown > 0 && countDown < 4 ? 800 : null
-  )
-
-  // DidMount Hook for Highscore
-  useEffect(() => {
-    setHighscore(
-      localStorage.getItem('highscore')
-        ? parseInt(localStorage.getItem('highscore')!)
-        : 0
-    )
-  }, [])
-
-  // Score Hook: increase game speed starting at 16
-  useEffect(() => {
-    if (score > minGameSpeed && score <= maxGameSpeed) {
-      setGameDelay(1000 / score)
-    }
-  }, [score])
+  );
 
   // Event Listener: Key Presses
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (
-        [
-          'ArrowUp',
-          'ArrowDown',
-          'ArrowLeft',
-          'ArrowRight',
-          'w',
-          'a',
-          's',
-          'd',
-        ].includes(e.key)
-      ) {
-        let velocity = { dx: 0, dy: 0 }
+      let velocityDelta = { dx: 0, dy: 0 };
 
-        switch (e.key) {
-          case 'ArrowRight':
-            velocity = { dx: 1, dy: 0 }
-            break
-          case 'ArrowLeft':
-            velocity = { dx: -1, dy: 0 }
-            break
-          case 'ArrowDown':
-            velocity = { dx: 0, dy: 1 }
-            break
-          case 'ArrowUp':
-            velocity = { dx: 0, dy: -1 }
-            break
-          case 'd':
-            velocity = { dx: 1, dy: 0 }
-            break
-          case 'a':
-            velocity = { dx: -1, dy: 0 }
-            break
-          case 's':
-            velocity = { dx: 0, dy: 1 }
-            break
-          case 'w':
-            velocity = { dx: 0, dy: -1 }
-            break
-          default:
-            console.error('Error with handleKeyDown')
-        }
-        if (
-          !(
-            previousVelocity.dx + velocity.dx === 0 &&
-            previousVelocity.dy + velocity.dy === 0
-          )
-        ) {
-          setVelocity(velocity)
-        }
+      switch (e.key) {
+        case "ArrowRight":
+          velocityDelta = { dx: 1, dy: 0 };
+          break;
+        case "ArrowLeft":
+          velocityDelta = { dx: -1, dy: 0 };
+          break;
+        case "ArrowDown":
+          velocityDelta = { dx: 0, dy: 1 };
+          break;
+        case "ArrowUp":
+          velocityDelta = { dx: 0, dy: -1 };
+          break;
+        case "p":
+          if (oldVelocity) {
+            console.log(oldVelocity);
+            velocityDelta = oldVelocity;
+            setOldVelocity(null);
+          } else {
+            setOldVelocity(velocity);
+            setVelocity(velocityDelta);
+          }
+          break;
+        default:
+          break;
       }
-    }
 
-    document.addEventListener('keydown', handleKeyDown)
+      if (
+        !(
+          previousVelocity.dx + velocityDelta.dx === 0 &&
+          previousVelocity.dy + velocityDelta.dy === 0
+        )
+      ) {
+        setVelocity(velocityDelta);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
     return () => {
-      document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [previousVelocity])
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [previousVelocity]);
 
   return (
-      <main className="flex justify-center items-center flex-col space-y-5">
+    <Page title={title} logo>
+      <div className="flex flex-col items-center pt-40 space-y-7">
         <canvas
           ref={canvasRef}
-          width={canvasWidth + 1}
-          height={canvasHeight + 1}
-          className='bg-stone-800 border-4 border-black'
+          width={WIDTH + 1}
+          height={HEIGHT + 1}
+          className="bg-white border-4 border-black shadow-md"
         />
-        <section>
-          <div className="score">
-            <p>
-              <FontAwesomeIcon icon={['fas', 'star']} />
-              Score: {score}
-            </p>
-            <p>
-              <FontAwesomeIcon icon={['fas', 'trophy']} />
-              Highscore: {highscore > score ? highscore : score}
-            </p>
-          </div>
-          {!isLost && countDown > 0 ? (
-            <button onClick={startGame}>
-              {countDown === 4 ? 'Start Game' : countDown}
+        <div className="text-black text-3xl flex flex-col items-center font-source-code-pro space-y-4">
+          <p>LETTERS: [{inventory.toString()}]</p>
+          {
+            <button className="focus:outline-none" onClick={startGame}>
+              {countDown === 4 ? (
+                <span className="shadow-md rounded-lg border-2 py-1 px-4">
+                  START
+                </span>
+              ) : (
+                countDown
+              )}
             </button>
-          ) : (
-            <div className="controls">
-              <p>How to Play?</p>
-              <p>
-                <FontAwesomeIcon icon={['fas', 'arrow-up']} />
-                <FontAwesomeIcon icon={['fas', 'arrow-right']} />
-                <FontAwesomeIcon icon={['fas', 'arrow-down']} />
-                <FontAwesomeIcon icon={['fas', 'arrow-left']} />
-              </p>
-            </div>
-          )}
-        </section>
-        {isLost && (
-          <div className="game-overlay">
-            <p className="large">Game Over</p>
-            <p className="final-score">
-              {newHighscore ? `🎉 New Highscore 🎉` : `You scored: ${score}`}
-            </p>
-            {!running && isLost && (
-              <button onClick={startGame}>
-                {countDown === 4 ? 'Restart Game' : countDown}
-              </button>
-            )}
-          </div>
-        )}
-      </main>
-  )
+          }
+        </div>
+      </div>
+    </Page>
+  );
 }

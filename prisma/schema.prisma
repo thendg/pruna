@@ -2,6 +2,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// TODO: add owner to DB
 datasource db {
   provider = "sqlite"
   url      = "file:dev.db"
