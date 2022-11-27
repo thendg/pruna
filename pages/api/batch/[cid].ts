@@ -98,7 +98,7 @@ async function post(
     const features = await getIPFSFromDirectory(cid as string, "features");
     const files = listIPFSDirectory(features.cid);
 
-    // TODO: add pruna json and files to db
+    // TODO: add pruna json and feature files to db
 
     res.status(200);
   } catch (err: any) {
