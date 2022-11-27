@@ -73,6 +73,8 @@ export default function Game() {
     setImageCID(imageJSON.cid);
   }
 
+  setImage();
+
   // Game State
 
   const [countDown, setCountDown] = useState(4);
@@ -383,7 +385,8 @@ export default function Game() {
             setOldVelocity(velocity);
             setVelocity(velocityDelta);
           }
-          location.href = "./spell";
+
+          router.push("./spell");
           break;
         default:
           break;
@@ -408,11 +411,10 @@ export default function Game() {
   return (
     <Page title={title}>
       <div className="flex flex-col items-center pt-10 space-y-7">
-        {imageCID !== "" && (
-          <img
-            src={`https://api.ipfsbrowser.com/ipfs/get.php?hash=${imageCID}`}
-          />
-        )}
+        <img
+          src={`https://api.ipfsbrowser.com/ipfs/get.php?hash=${imageCID}`}
+        />
+
         <canvas
           ref={canvasRef}
           width={WIDTH + 1}
